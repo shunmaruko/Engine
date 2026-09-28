@@ -614,7 +614,7 @@ void ScriptedTradeEngineBuilder::populateModelParameters() {
         hestonQuantoTimeStepsPerYear_ = parseInteger(engineParameter(
             "HestonQuantoTimeStepsPerYear", getModelEngineQualifiers(), false, to_string(timeStepsPerYear_)));
         hestonQuantoProcessDiscretization_ = parseHestonProcessDiscretization(
-            engineParameter("Heston.QuantoProcessDiscretization", getModelEngineQualifiers(), "false", tmp));
+            engineParameter("Heston.QuantoProcessDiscretization", getModelEngineQualifiers(), false, tmp));
     }
 
     if (engineParam_ == "MC") {
