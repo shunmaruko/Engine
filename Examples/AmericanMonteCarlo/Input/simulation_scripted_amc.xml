@@ -4,13 +4,13 @@
     <Discretization>Exact</Discretization>
     <!-- 36 monthly steps covering 3 years — sufficient for the 2025-02-01 KnockOutSwap maturity,
          the longest in the scripted AMC portfolio. -->
-    <Grid>36,1M</Grid>
+    <Grid>500,1D</Grid>
     <Calendar>EUR,USD</Calendar>
     <DayCounter>A365</DayCounter>
     <Sequence>SobolBrownianBridge</Sequence>
     <Scenario>Simple</Scenario>
     <Seed>42</Seed>
-    <Samples>1000</Samples>
+    <Samples>10000</Samples>
   </Parameters>
   <CrossAssetModel>
     <DomesticCcy>USD</DomesticCcy>
@@ -18,6 +18,9 @@
       <Currency>USD</Currency>
       <Currency>EUR</Currency>
     </Currencies>
+    <Equities>
+      <Equity>SP5</Equity>
+    </Equities>
     <BootstrapTolerance>0.0001</BootstrapTolerance>
     <InterestRateModels>
       <LGM ccy="default">
@@ -63,6 +66,22 @@
         </CalibrationOptions>
       </CrossCcyLGM>
     </ForeignExchangeModels>
+    <EquityModels>
+      <CrossAssetLGM name="default">
+        <Currency>USD</Currency>
+        <CalibrationType>Bootstrap</CalibrationType>
+        <Sigma>
+          <Calibrate>Y</Calibrate>
+          <ParamType>Piecewise</ParamType>
+          <TimeGrid>    1.0, 2.0, 3.0, 4.0, 5.0, 7.0, 10.0</TimeGrid>
+          <InitialValue>0.1, 0.1, 0.1, 0.1, 0.1, 0.1,  0.1, 0.1</InitialValue>
+        </Sigma>
+        <CalibrationOptions>
+          <Expiries>1Y, 2Y, 3Y, 4Y, 5Y, 10Y</Expiries>
+          <Strikes/>
+        </CalibrationOptions>
+      </CrossAssetLGM>
+    </EquityModels>
     <InstantaneousCorrelations>
       <Correlation factor1="IR:EUR" factor2="IR:USD">0</Correlation>
       <Correlation factor1="IR:USD" factor2="FX:EURUSD">0</Correlation>
@@ -146,5 +165,21 @@
         <Name>EUR-IN-USD</Name>
       </BenchmarkCurve>
     </BenchmarkCurves>
+    <Equities>
+      <SimulateDividendYield>false</SimulateDividendYield>
+      <Names>
+        <Name>SP5</Name>
+      </Names>
+      <DividendTenors>6M,1Y,2Y</DividendTenors>
+    </Equities>  
+    <EquityVolatilities>
+      <Simulate>false</Simulate>
+      <ReactionToTimeDecay>ForwardVariance</ReactionToTimeDecay>
+      <!-- Alternative: ConstantVariance -->
+      <Names>
+        <Name>SP5</Name>
+      </Names>
+      <Expiries>6M,1Y,2Y,3Y,4Y,5Y,7Y,10Y</Expiries>
+    </EquityVolatilities>  
   </Market>
 </Simulation>

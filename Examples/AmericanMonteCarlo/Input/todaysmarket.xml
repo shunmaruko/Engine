@@ -64,4 +64,10 @@
     <Security name="SECURITY_1_FWDEXP_20251220">Security/SECURITY_1_FWDEXP_20251220</Security>
     <Security name="SECURITY_1_cutted">Security/SECURITY_1_cutted</Security>
   </Securities>
+  <EquityCurves id="default">
+    <EquityCurve name="SP5">Equity/USD/SP5</EquityCurve>
+  </EquityCurves>
+  <EquityVolatilities id="default">
+    <EquityVolatility name="SP5">EquityVolatility/USD/SP5</EquityVolatility>
+  </EquityVolatilities>
 </TodaysMarket>

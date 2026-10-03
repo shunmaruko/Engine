@@ -1,0 +1,156 @@
+<?xml version="1.0"?>
+<ScriptLibrary>
+  <Script>
+    <Name>EuropeanOption</Name>
+    <!-- default script (MC)-->
+      <Script>
+	      <Code>
+            <![CDATA[
+        REQUIRE PutCall == 1 OR PutCall == -1;
+        REQUIRE LongShort == 1 OR LongShort == -1;   
+        REQUIRE Strike >= 0; REQUIRE Quantity >= 0;
+	      NUMBER Payoff, currentNotional;
+	      Payoff = PutCall * (Underlying(Expiry) - Strike);
+	      Option = LOGPAY( LongShort * Quantity * max( Payoff, 0 ), Expiry, Settlement, PayCcy, 1, OptionFlow);
+	      currentNotional = Strike * Quantity;
+            ]]>
+        </Code>
+	      <NPV>Option</NPV>
+	      <Results>
+          <Result>currentNotional</Result>
+          <Result rename="notionalCurrency">PayCcy</Result>
+	      </Results>
+	      <CalibrationSpec>
+          <Calibration>
+          <Index>Underlying</Index>
+          <Strikes>
+		        <Strike>Strike</Strike>
+          </Strikes>
+          </Calibration>
+	      </CalibrationSpec>
+      </Script>
+  </Script>
+  <Script>
+    <Name>EuropeanForward</Name>
+    <!-- default script (MC)-->
+      <Script>
+	      <Code>
+            <![CDATA[
+        REQUIRE LongShort == 1 OR LongShort == -1;    
+        REQUIRE Strike >= 0; REQUIRE Quantity >= 0;
+	      NUMBER currentNotional;
+	      Forward = LOGPAY( LongShort * Quantity * (Underlying(Expiry) - Strike), Expiry, Settlement, PayCcy, 1, OptionFlow);
+	      currentNotional = Strike * Quantity;
+            ]]>
+        </Code>
+	      <NPV>Forward</NPV>
+	      <Results>
+          <Result>currentNotional</Result>
+          <Result rename="notionalCurrency">PayCcy</Result>
+	      </Results>
+      </Script>
+  </Script>
+  <Script>
+    <Name>AmericanOption</Name>
+    <!-- default script. Note this pricing is incorrect-->
+      <Script>
+	      <Code>
+            <![CDATA[
+        REQUIRE PutCall == 1 OR PutCall == -1;
+        REQUIRE LongShort == 1 OR LongShort == -1;   
+        REQUIRE Strike >= 0; REQUIRE Quantity >= 0;
+	      NUMBER Payoff, currentNotional;
+	      Payoff = PutCall * (Underlying(ExerciseDates[SIZE(ExerciseDates)]) - Strike);
+	      Option = LOGPAY( LongShort * Quantity * max( Payoff, 0 ), ExerciseDates[SIZE(ExerciseDates)], SettlementDates[SIZE(SettlementDates)], PayCcy, 1, OptionFlow);
+	      currentNotional = Strike * Quantity;
+            ]]>
+        </Code>
+	      <NPV>Option</NPV>
+	      <Results>
+          <Result>currentNotional</Result>
+          <Result rename="notionalCurrency">PayCcy</Result>
+	      </Results>
+	      <CalibrationSpec>
+          <Calibration>
+          <Index>Underlying</Index>
+          <Strikes>
+		        <Strike>Strike</Strike>
+          </Strikes>
+          </Calibration>
+	      </CalibrationSpec>
+      </Script>
+    <Script purpose="AMC">
+      <Code><![CDATA[
+      REQUIRE LongShort == 1 OR LongShort == -1;    
+      REQUIRE Strike >= 0; REQUIRE Quantity >= 0;
+      REQUIRE SIZE(SettlementDates) == SIZE(ExerciseDates);
+      
+      NUMBER _AMC_NPV[SIZE(_AMC_SimDates)];
+      NUMBER Option[SIZE(ExerciseAndSimDates) + 1], Payoff;
+      NUMBER exIdx, lastExIdx, ExerciseIndicator[SIZE(ExerciseDates)];
+      NUMBER i, j;
+      
+      lastExIdx = DATEINDEX(ExerciseDates[SIZE(ExerciseDates)], ExerciseAndSimDates, EQ);
+      Option[lastExIdx] = PAY(
+          max(PutCall * (Underlying(ExerciseDates[SIZE(ExerciseDates)]) - Strike), 0 ), 
+          ExerciseDates[SIZE(ExerciseDates)], 
+          SettlementDates[SIZE(ExerciseDates)], 
+          PayCcy
+      );
+      FOR i IN (lastExIdx-1, 1, -1) DO
+        Option[i] = Option[i + 1];
+        exIdx = DATEINDEX(ExerciseAndSimDates[i], ExerciseDates, EQ);
+        IF exIdx > 0 THEN
+          Payoff = PAY(
+              max(PutCall * (Underlying(ExerciseAndSimDates[i]) - Strike), 0 ), 
+              ExerciseDates[exIdx], 
+              SettlementDates[exIdx], 
+              PayCcy
+          );
+          IF Payoff > 0 AND Payoff > NPVMEM( Option[i], ExerciseAndSimDates[i], i , Payoff > 0 ) THEN
+            ExerciseIndicator[exIdx] = 1;
+            Option[i] = Payoff;
+            FOR j IN (exIdx + 1, SIZE(ExerciseDates), 1) DO
+              ExerciseIndicator[j] = 0;
+            END;
+          END;
+        END;
+      END;
+      FOR i IN (1, SIZE(_AMC_SimDates), 1) DO
+        _AMC_NPV[i] = NPVMEM( Option[DATEINDEX(_AMC_SimDates[i], ExerciseAndSimDates, EQ)]* LongShort * Quantity, _AMC_SimDates[i], SIZE(ExerciseAndSimDates) + i);
+      END;
+      OptionValue = Option[1] * LongShort * Quantity;
+      ]]>
+      </Code>
+      <NPV>OptionValue</NPV>
+      <Results> 
+        <Result>Option</Result>
+        <Result>_AMC_NPV</Result>
+        <Result>ExerciseIndicator</Result>
+      </Results>
+      <!-- Create ExerciseAndSimDates schedule from AMC sim dates (if given) and exercise dates -->
+      <NewSchedules>
+        <NewSchedule>
+          <Name>ExerciseAndSimDates</Name>
+          <Operation>Join</Operation>
+          <Schedules>
+            <Schedule>_AMC_SimDates</Schedule>
+            <Schedule>ExerciseDates</Schedule>
+          </Schedules>
+        </NewSchedule>
+      </NewSchedules>
+      <!-- in sticky date mpor mode we'll determine the ExerciseIndicator in the valuation dates run and reuse in the closeout dates run -->
+      <StickyCloseOutStates>
+        <StickyCloseOutState>ExerciseIndicator</StickyCloseOutState>
+      </StickyCloseOutStates>
+      <CalibrationSpec>
+        <Calibration>
+          <Index>Underlying</Index>
+          <Strikes>
+		        <Strike>Strike</Strike>
+          </Strikes>
+        </Calibration>
+	    </CalibrationSpec>
+    </Script>
+  </Script>
+</ScriptLibrary>

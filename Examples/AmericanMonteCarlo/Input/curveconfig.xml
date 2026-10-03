@@ -715,4 +715,36 @@
       <PriceQuote>BOND/PRICE/SECURITY_1_cutted</PriceQuote>
     </Security>
   </Securities>
+	<EquityCurves>
+		<EquityCurve>
+			<CurveId>SP5</CurveId>
+			<CurveDescription>SP 500 equity price projection curve</CurveDescription>
+			<Currency>USD</Currency>
+			<ForecastingCurve>USD-SOFR</ForecastingCurve>
+			<Type>DividendYield</Type><!-- {DividendYield, ForwardPrice} -->
+			<SpotQuote>EQUITY/PRICE/SP5/USD</SpotQuote><!--  the spot quote from the market data file -->
+			<Quotes>
+				<Quote>EQUITY_DIVIDEND/RATE/SP5/USD/3M</Quote>
+				<Quote>EQUITY_DIVIDEND/RATE/SP5/USD/6M</Quote>
+				<Quote>EQUITY_DIVIDEND/RATE/SP5/USD/1Y</Quote>
+				<Quote>EQUITY_DIVIDEND/RATE/SP5/USD/2Y</Quote>
+			</Quotes>
+			<DayCounter>A365</DayCounter>
+			<DividendInterpolation>
+				<InterpolationVariable>Zero</InterpolationVariable>
+				<InterpolationMethod>Linear</InterpolationMethod>
+			</DividendInterpolation>
+		</EquityCurve>
+	</EquityCurves>
+	<EquityVolatilities>
+		<EquityVolatility>
+			<CurveId>SP5</CurveId>
+			<CurveDescription>Lognormal option implied vols for SP 500</CurveDescription>
+			<Currency>USD</Currency>
+			<Dimension>ATM</Dimension>
+			<Expiries>
+        6M
+			</Expiries>
+		</EquityVolatility>
+	</EquityVolatilities>
 </CurveConfiguration>
